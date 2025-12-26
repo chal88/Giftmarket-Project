@@ -1,0 +1,52 @@
+{% extends "shop/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Vendor Dashboard</h2>
+
+    {% if vendor_profile.stores.exists %}
+        <!-- Add Product Button -->
+        <div class="mb-3">
+            <a href="{% url 'add_product' %}" class="btn btn-success">Add New Product</a>
+        </div>
+
+        <!-- Products List -->
+        <div class="row">
+            {% for product in products %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" class="card-img-top product-img" alt="{{ product.name }}">
+                        {% else %}
+                            <img src="{% static 'images/default.png' %}" class="card-img-top product-img" alt="No image available">
+                        {% endif %}
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">{{ product.name }}</h5>
+                            <p class="card-text">{{ product.description|truncatewords:15 }}</p>
+                            <p class="card-text fw-bold">R {{ product.price }}</p>
+                            <div class="mt-auto">
+                                <a href="{% url 'edit_product' product.id %}" class="btn btn-primary me-2">Edit</a>
+                                <a href="{% url 'delete_product' product.id %}" class="btn btn-danger">Delete</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p>No products added yet.</p>
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <!-- No store exists: Show create store form -->
+        <h4>You don't have a store yet. Create one below:</h4>
+        <form method="post" class="mt-3">
+            {% csrf_token %}
+            <div class="mb-3">
+                <input type="text" name="store_name" class="form-control" placeholder="Enter store name" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Create Store</button>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

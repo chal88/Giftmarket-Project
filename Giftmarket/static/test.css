@@ -1,0 +1,152 @@
+body {
+    background: #f7f7f9;
+}
+.product-img {
+    height: 200px;       /* adjust as needed */
+    width: 100%;         /* full card width */
+    object-fit: cover;   /* crop while keeping aspect ratio */
+    border-radius: 5px;
+}
+
+/* -------------------------------
+   Reviews Section
+------------------------------- */
+.review {
+    border-bottom: 1px solid #ccc;
+    padding: 10px 0;
+}
+
+.add-review textarea {
+    width: 100%;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.add-review button {
+    margin-top: 5px;
+    padding: 6px 12px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.add-review button:hover {
+    background-color: #0056b3;
+}
+
+
+/* ===== Base Styles ===== */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f7f7f9;
+    color: #333;
+}
+
+a {
+    text-decoration: none;
+    color: #007bff;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* ===== Header ===== */
+header {
+    background: #ffffff;
+    padding: 15px 30px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+header h1 {
+    margin: 0 0 10px 0;
+    font-size: 28px;
+}
+
+header h1 a {
+    color: #333;
+}
+
+/* ===== Navigation ===== */
+nav ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 0;
+    margin: 0;
+    align-items: center;
+}
+
+nav li {
+    display: inline-flex;
+    align-items: center;
+}
+
+nav span {
+    font-weight: bold;
+}
+
+button.logout-btn {
+    background: #dc3545;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font: inherit;
+}
+
+button.logout-btn:hover {
+    background: #c82333;
+}
+
+/* ===== Cart Counter ===== */
+nav a[href$="view_cart/"] {
+    position: relative;
+}
+
+nav a[href$="view_cart/"]::after {
+    content: attr(data-count);
+    display: inline-block;
+    background: #dc3545;
+    color: #fff;
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 50%;
+    position: absolute;
+    top: -8px;
+    right: -12px;
+}
+
+/* ===== Main Content ===== */
+main {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 15px;
+}
+
+/* ===== Footer ===== */
+footer {
+    background: #f1f1f1;
+    padding: 15px 30px;
+    text-align: center;
+    font-size: 14px;
+    color: #555;
+}
+
+/* ===== Responsive ===== */
+@media screen and (max-width: 768px) {
+    nav ul {
+        flex-direction: column;
+        gap: 10px;
+    }
+    header h1 {
+        font-size: 24px;
+    }
+}

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice for Order #{{ order.id }}</title>
+</head>
+<body>
+    <h2>Hi {{ user.username }},</h2>
+    <p>Thank you for your purchase! Here is your order invoice:</p>
+
+    <h3>Order #{{ order.id }}</h3>
+    <p>Status: {{ order.status }}</p>
+
+    <ul>
+        {% for item in order.items.all %}
+            <li>
+                {{ item.quantity }} x {{ item.product.name }} - R {{ item.price }}
+            </li>
+        {% endfor %}
+    </ul>
+
+    <p><strong>Total: R{{ order.total_price }}</strong></p>
+    <p>We hope you enjoy your items! We will notify you once your order has shipped.</p>
+</body>
+</html>

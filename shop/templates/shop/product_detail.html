@@ -1,0 +1,128 @@
+{% extends "shop/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <!-- PRODUCT INFO -->
+    <div class="row mb-4">
+        <div class="col-md-6 text-center">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" class="img-fluid rounded shadow-sm">
+            {% else %}
+                <img src="{% static 'images/default.png' %}" class="img-fluid rounded shadow-sm">
+            {% endif %}
+        </div>
+
+        <div class="col-md-6">
+            <h2 class="mb-3">{{ product.name }}</h2>
+            <p class="text-muted">{{ product.description }}</p>
+
+            <p><strong>Price:</strong> R{{ product.price }}</p>
+            <p><strong>Stock:</strong> {{ product.stock }}</p>
+
+            <!-- AVERAGE RATING -->
+            {% if average_rating %}
+                <p class="mb-1">
+                    <strong>Average Rating:</strong>
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= average_rating %}
+                            <span style="color:gold;">★</span>
+                        {% else %}
+                            <span style="color:#ccc;">★</span>
+                        {% endif %}
+                    {% endfor %}
+                    <small class="text-muted">
+                        ({{ average_rating }}/5 · {{ reviews|length }} reviews)
+                    </small>
+                </p>
+            {% else %}
+                <p class="text-muted">No reviews yet.</p>
+            {% endif %}
+
+            <a href="{% url 'add_to_cart' product.id %}" class="btn btn-success mt-3">
+                Add to Cart
+            </a>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- REVIEWS SECTION -->
+    <h3 class="mb-3">Customer Reviews</h3>
+
+    {% for review in reviews %}
+        <div class="mb-3 pb-2 border-bottom">
+            <strong>{{ review.user.username }}</strong>
+
+            {% if review.verified_purchase %}
+                <span class="badge bg-success ms-2">Verified Purchase</span>
+            {% else %}
+                <span class="badge bg-warning text-dark ms-2">Unverified</span>
+            {% endif %}
+
+            <!-- STAR RATING -->
+            <div>
+                {% for i in "12345" %}
+                    {% if forloop.counter <= review.rating %}
+                        <span style="color:gold;">★</span>
+                    {% else %}
+                        <span style="color:#ccc;">★</span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <p class="mt-2">{{ review.comment }}</p>
+            <small class="text-muted">
+                {{ review.created_at|date:"M d, Y" }}
+            </small>
+        </div>
+    {% empty %}
+        <p class="text-muted">No reviews yet. Be the first to review this product.</p>
+    {% endfor %}
+
+    <hr>
+
+    <!-- ADD REVIEW -->
+    {% if user.is_authenticated %}
+        {% if not user_has_reviewed %}
+            <h4 class="mt-4">Leave a Review</h4>
+            <form method="post" action="{% url 'submit_review' product.id %}" class="mt-3">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label">Rating</label>
+                    <input type="number"
+                           name="rating"
+                           min="1"
+                           max="5"
+                           value="5"
+                           class="form-control"
+                           required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Comment</label>
+                    <textarea name="comment"
+                              class="form-control"
+                              rows="3"
+                              required></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Submit Review
+                </button>
+            </form>
+        {% else %}
+            <p class="text-muted mt-3">
+                You have already reviewed this product.
+            </p>
+        {% endif %}
+    {% else %}
+        <p class="mt-3">
+            <a href="{% url 'login' %}">Log in</a> to leave a review.
+        </p>
+    {% endif %}
+
+</div>
+{% endblock %}
