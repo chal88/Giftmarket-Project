@@ -9,6 +9,7 @@ from .serializers import (
     ReviewSerializer
 )
 from .permissions import IsVendor
+from .twitter_service import post_tweet
 
 
 # -----------------------------
@@ -20,26 +21,57 @@ class StoreCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsVendor]
 
     def perform_create(self, serializer):
-        """Save the store with the current vendor as the owner."""
-        serializer.save(vendor=self.request.user.vendor_profile)
+        """Save the store and post a tweet."""
+        store = serializer.save(
+            vendor=self.request.user.vendor_profile
+            )
+
+        # Build tweet text
+        tweet_text = (
+            f"🛍️ New store launched on Giftmarket!\n\n"
+            f"{store.name}\n\n"
+            f"{store.description}"
+            )
+
+        # Optional image (logo)
+        image_url = store.logo.url if store.logo else None
+
+        # Post tweet
+        post_tweet(text=tweet_text, image_url=image_url)
 
 
 # -----------------------------
 # VENDOR: CREATE PRODUCT
 # -----------------------------
+
+
 class ProductCreateView(generics.CreateAPIView):
     """Vendor adds a product to their store."""
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticated, IsVendor]
 
     def perform_create(self, serializer):
-        """Save the product under the specified store owned by the vendor."""
+        """Save the product and post a tweet."""
         store = get_object_or_404(
             Store,
             id=self.kwargs['store_id'],
             vendor=self.request.user.vendor_profile
         )
-        serializer.save(store=store)
+
+        product = serializer.save(store=store)
+
+        # Build tweet text
+        tweet_text = (
+            f"🆕 New product added to {store.name}!\n\n"
+            f"{product.name}\n\n"
+            f"{product.description}"
+        )
+
+        # Optional image
+        image_url = product.image.url if product.image else None
+
+        # Post tweet
+        post_tweet(text=tweet_text, image_url=image_url)
 
 
 # -----------------------------

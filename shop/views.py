@@ -8,6 +8,7 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.db.models import Avg
+from .twitter_service import post_tweet
 
 from .models import Product, Order, OrderItem, Review, Store, VendorProfile, User
 from .forms import (
@@ -15,8 +16,9 @@ from .forms import (
     VendorSignupForm,
     OrderItemForm,
     ProductForm,
-    ProductUpdateForm
-)
+    ProductUpdateForm)
+from shop.models import VendorProfile, Store, Product
+
 
 # -----------------------------
 # PRODUCT LIST / DETAIL
@@ -63,24 +65,33 @@ def view_cart(request):
 
 
 @login_required
-def add_to_cart(request):
-    """Add a new product."""
-    vendor_profile = request.user.vendor_profile
-    # Check vendor has at least one store
-    store = vendor_profile.stores.first()
-    if not store:
-        messages.error(request, "You must create a store first.")
-        return redirect('vendor_dashboard')
+def add_to_cart(request, product_id):
+    """Add a product to the buyer's cart."""
 
-    form = ProductForm(request.POST or None, request.FILES or None)
-    if form.is_valid():
-        product = form.save(commit=False)
-        product.store = store
-        product.save()
-        messages.success(request, "Product added successfully.")
-        return redirect('vendor_dashboard')
+    product = get_object_or_404(Product, id=product_id)
 
-    return render(request, 'shop/add_to_cart.html', {'form': form})
+    # Get or create pending order
+    order, created = Order.objects.get_or_create(
+        buyer=request.user,
+        status='pending'
+    )
+
+    # Get or create order item
+    order_item, created = OrderItem.objects.get_or_create(
+        order=order,
+        product=product,
+        defaults={
+            'quantity': 1,
+            'price': product.price
+            }
+    )
+
+    if not created:
+        order_item.quantity += 1
+        order_item.save()
+
+    messages.success(request, "Product added to cart.")
+    return redirect('view_cart')
 
 
 @login_required
@@ -121,14 +132,19 @@ def checkout(request):
         return redirect('product_list')
 
     order.status = 'processing'
-    order.total_price = sum(item.product.price * item.quantity for item in order.items.all())
+    order.total_price = sum(
+        item.product.price * item.quantity for item in order.items.all())
     order.save()
 
     subject = f"Invoice for Order #{order.id}"
-    message = render_to_string('shop/email_invoice.html', {'order': order, 'user': request.user})
-    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [request.user.email], fail_silently=False)
+    message = render_to_string('shop/email_invoice.html',
+                               {'order': order, 'user': request.user})
+    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL,
+              [request.user.email], fail_silently=False)
 
-    messages.success(request, f"Order #{order.id} placed successfully. Invoice sent to your email.")
+    messages.success(request,
+                     f"Order #{order.id} placed successfully."
+                     f"Invoice sent to your email.")
     return redirect('order_history')
 
 
@@ -228,61 +244,74 @@ def vendor_signup(request):
 # VENDOR DASHBOARD / PRODUCT MANAGEMENT
 # -----------------------------
 
+
 @login_required
 def vendor_dashboard(request):
-    """Vendor dashboard showing their products and
-    store creation if none exists."""
-    if not hasattr(request.user, 'vendor_profile'):
-        messages.error(request, "Complete vendor signup first.")
-        return redirect('vendor_signup')
+    """Vendor dashboard showing stores and products.
+    Allows store creation if none exists."""
+    vendor_profile = None
+    stores = []
+    products = []
 
-    vendor_profile = request.user.vendor_profile
+    try:
+        vendor_profile = VendorProfile.objects.get(user=request.user)
 
-    # Handle store creation if form submitted
-    if request.method == 'POST' and 'store_name' in request.POST:
-        store_name = request.POST.get('store_name', '').strip()
-        if store_name:
-            Store.objects.create(vendor=vendor_profile, name=store_name)
-            messages.success(request,
-                             f"Store '{store_name}' created successfully!")
-            return redirect('vendor_dashboard')
-        else:
-            messages.error(request, "Store name cannot be empty.")
+        # HANDLE STORE CREATION
+        if request.method == "POST":
+            store_name = request.POST.get("store_name")
+            if store_name:
+                Store.objects.create(
+                    vendor=vendor_profile,
+                    name=store_name
+                )
+                return redirect("vendor_dashboard")
 
-    products = Product.objects.filter(store__vendor=vendor_profile)
+        stores = Store.objects.filter(vendor=vendor_profile)
+        products = Product.objects.filter(store__in=stores)
 
-    return render(
-        request,
-        'shop/vendor_dashboard.html',
-        {
-            'vendor_profile': vendor_profile,
-            'products': products
-        }
-    )
+    except VendorProfile.DoesNotExist:
+        pass
+
+    context = {
+        "vendor_profile": vendor_profile,
+        "stores": stores,
+        "products": products,
+    }
+
+    return render(request, "shop/vendor_dashboard.html", context)
 
 
 @login_required
 def add_product(request):
     """Add a new product for the vendor."""
+
     if not hasattr(request.user, 'vendor_profile'):
         messages.error(request, "You must complete vendor signup first.")
         return redirect('vendor_signup')
 
     vendor_profile = request.user.vendor_profile
     store = vendor_profile.stores.first()
+
     if not store:
         messages.error(request, "Create a store first.")
         return redirect('vendor_dashboard')
 
-    form = ProductForm(request.POST or None, request.FILES or None)
-    if form.is_valid():
-        product = form.save(commit=False)
-        product.store = store  # assign store explicitly
-        product.save()
-        messages.success(request, "Product added successfully.")
-        return redirect('vendor_dashboard')
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            product = form.save(commit=False)
+            product.store = store
+            product.save()
+            messages.success(request, "Product added successfully.")
+            return redirect('vendor_dashboard')
+    else:
+        form = ProductForm()
 
-    return render(request, 'shop/add_product.html', {'form': form})
+    # ✅ ALWAYS return a response
+    return render(request, 'shop/add_product.html', {
+        'form': form,
+        'store': store
+    })
 
 
 @login_required

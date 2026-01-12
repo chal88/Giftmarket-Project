@@ -39,7 +39,6 @@ REST_FRAMEWORK = {
 }
 
 
-
 # CUSTOM USER MODEL
 
 AUTH_USER_MODEL = 'shop.User'
@@ -93,7 +92,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'giftmarket_db',
-        'USER': 'root',
+        'USER': 'giftmarket_user',
         'PASSWORD': 'root',
         'HOST': 'localhost',
         'PORT': '3306',
@@ -107,8 +106,10 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.'
      'UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+    {'NAME':
+     'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME':
+     'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 
@@ -152,3 +153,10 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'chalicefourie88@gmail.com'    # your sender email
 EMAIL_HOST_PASSWORD = 'cdbo jqfd sxos xpeg'  # or app-specific password
 DEFAULT_FROM_EMAIL = 'Giftmarket <your_email@gmail.com>'
+
+# Twitter API credentials
+X_API_KEY = os.getenv("X_API_KEY")
+X_API_SECRET = os.getenv("X_API_SECRET")
+X_ACCESS_TOKEN = os.getenv("X_ACCESS_TOKEN")
+X_ACCESS_SECRET = os.getenv("X_ACCESS_SECRET")
+

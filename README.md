@@ -37,7 +37,12 @@ Django REST Framework.
 
 ---
 
-## Setup Instructions
+## Known Limitations
+- Twitter (X) API posting is disabled if API credentials are not configured.
+- Image uploads require correct MEDIA settings.
+
+
+## Installation & Setup Instructions
 
 ### 1. Clone the repository
 ```bash
