@@ -8,6 +8,34 @@ Django REST Framework.
 
 ---
 
+## Planning & System Design
+
+This project includes formal planning documentation and system design
+artifacts as required by the task specification.
+
+### Planning Documents
+All planning files are located in the `Planning/` directory and include:
+- Project overview
+- Requirements analysis
+- UI layout planning
+- Security considerations
+- Failure and risk planning
+
+### API Sequence Diagrams
+API request–response flows are documented using sequence diagrams.
+
+The diagrams are located in the following directory:
+
+
+These diagrams visually describe:
+- Buyer actions (browse products, add to cart, checkout)
+- Vendor actions (create store, add/edit/delete products)
+- API request and response flow
+- Database interactions
+
+Each diagram uses arrows to clearly show the order of interactions
+between the Client, Django Views, API endpoints, and Database.
+
 ## Features
 
 ### Marketplace
@@ -41,6 +69,20 @@ Django REST Framework.
 - Twitter (X) API posting is disabled if API credentials are not configured.
 - Image uploads require correct MEDIA settings.
 
+## Project Structure (High-Level)
+
+```text
+Giftmarket/
+├── README.md
+├── manage.py
+├── Planning/
+├── sequence_api_diagram/
+├── Giftmarket/
+├── shop/
+├── media/
+├── static/
+└── venv/
+
 
 ## Installation & Setup Instructions
 
@@ -48,3 +90,11 @@ Django REST Framework.
 ```bash
 git clone <repository-url>
 cd GiftmarketProject
+
+## Planning & Design
+
+This project includes planning documentation in the form of a sequence diagram
+that explains how the main API endpoints interact.
+
+- File: `sequence_api_diagram.md`
+- Covers cart, checkout, and vendor product management flows
