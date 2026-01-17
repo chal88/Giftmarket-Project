@@ -11,22 +11,44 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
     <div class="container">
         <a class="navbar-brand" href="{% url 'product_list' %}">Giftmarket</a>
-        <div class="collapse navbar-collapse">
-            <ul class="navbar-nav me-auto">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+
                 {% if user.is_authenticated %}
-                    <li class="nav-item"><span class="nav-link">Hello, {{ user.username }}</span></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'view_cart' %}">Cart</a></li>
                     <li class="nav-item">
-                        <form method="post" action="{% url 'logout' %}">
+                        <span class="nav-link">Hello, {{ user.username }}</span>
+                    </li>
+                    {% if user.role == 'vendor' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'vendor_dashboard' %}">Dashboard</a>
+                        </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'view_cart' %}">Cart</a>
+                    </li>
+                    <li class="nav-item">
+                        <form method="post" action="{% url 'logout' %}" class="d-inline">
                             {% csrf_token %}
                             <button class="btn btn-link nav-link" type="submit">Logout</button>
                         </form>
                     </li>
                 {% else %}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'buyer_signup' %}">Sign Up (Buyer)</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'vendor_signup' %}">Sign Up (Vendor)</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'buyer_signup' %}">Sign Up (Buyer)</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'vendor_signup' %}">Sign Up (Vendor)</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">Login</a>
+                    </li>
                 {% endif %}
+
             </ul>
         </div>
     </div>
@@ -35,7 +57,10 @@
 <div class="container">
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-success">{{ message }}</div>
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
         {% endfor %}
     {% endif %}
 

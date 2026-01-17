@@ -247,38 +247,37 @@ def vendor_signup(request):
 
 @login_required
 def vendor_dashboard(request):
-    """Vendor dashboard showing stores and products.
-    Allows store creation if none exists."""
-    vendor_profile = None
-    stores = []
-    products = []
+    """Vendor dashboard showing stores and products."""
 
-    try:
-        vendor_profile = VendorProfile.objects.get(user=request.user)
+    if not hasattr(request.user, "vendor_profile"):
+        messages.error(request, "Vendor profile not found.")
+        return redirect("vendor_signup")
 
-        # HANDLE STORE CREATION
-        if request.method == "POST":
-            store_name = request.POST.get("store_name")
-            if store_name:
-                Store.objects.create(
-                    vendor=vendor_profile,
-                    name=store_name
-                )
-                return redirect("vendor_dashboard")
+    vendor_profile = request.user.vendor_profile
 
-        stores = Store.objects.filter(vendor=vendor_profile)
-        products = Product.objects.filter(store__in=stores)
+    if request.method == "POST":
+        store_name = request.POST.get("store_name")
 
-    except VendorProfile.DoesNotExist:
-        pass
+        if not store_name:
+            messages.error(request, "Store name is required.")
+            return redirect("vendor_dashboard")
 
-    context = {
+        Store.objects.create(
+            vendor=vendor_profile,
+            name=store_name
+        )
+
+        messages.success(request, "Store created successfully.")
+        return redirect("vendor_dashboard")
+
+    stores = Store.objects.filter(vendor=vendor_profile)
+    products = Product.objects.filter(store__in=stores)
+
+    return render(request, "shop/vendor_dashboard.html", {
         "vendor_profile": vendor_profile,
         "stores": stores,
         "products": products,
-    }
-
-    return render(request, "shop/vendor_dashboard.html", context)
+    })
 
 
 @login_required
