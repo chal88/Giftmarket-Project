@@ -1,6 +1,6 @@
 """Giftmarket Shop API Views"""
 
-from rest_framework import generics, permissions
+from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from .models import Store, Product, Review
 from .serializers import (
@@ -10,34 +10,34 @@ from .serializers import (
 )
 from .permissions import IsVendor
 from .twitter_service import post_tweet
-
+from .models import VendorProfile
+from rest_framework import generics, permissions
+from .models import Store, Product, Review
 
 # -----------------------------
 # VENDOR: CREATE STORE
 # -----------------------------
+
+
 class StoreCreateView(generics.CreateAPIView):
     """Vendor creates a new store."""
     serializer_class = StoreSerializer
     permission_classes = [permissions.IsAuthenticated, IsVendor]
 
     def perform_create(self, serializer):
-        """Save the store and post a tweet."""
-        store = serializer.save(
-            vendor=self.request.user.vendor_profile
-            )
+        """
+        Save the store safely for the logged-in vendor.
+        Automatically creates a VendorProfile if missing.
+        """
 
-        # Build tweet text
-        tweet_text = (
-            f"🛍️ New store launched on Giftmarket!\n\n"
-            f"{store.name}\n\n"
-            f"{store.description}"
-            )
+        # ✅ Safely get or create VendorProfile
+        vendor_profile, created = VendorProfile.objects.get_or_create(
+            user=self.request.user,
+            defaults={'store_name': f"{self.request.user.username}'s Store"}
+        )
 
-        # Optional image (logo)
-        image_url = store.logo.url if store.logo else None
-
-        # Post tweet
-        post_tweet(text=tweet_text, image_url=image_url)
+        # ✅ Save the store linked to this vendor
+        serializer.save(vendor=vendor_profile)
 
 
 # -----------------------------
@@ -51,28 +51,39 @@ class ProductCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsVendor]
 
     def perform_create(self, serializer):
-        """Save the product and post a tweet."""
+        """Save the product safely and post a tweet."""
+
+        # ✅ Safely get or create VendorProfile
+        vendor_profile, _ = getattr(self.request.user, 'vendor_profile', None), None
+        if vendor_profile is None:
+            from .models import VendorProfile
+            vendor_profile, _ = VendorProfile.objects.get_or_create(
+                user=self.request.user,
+                defaults={'store_name': f"{self.request.user.username}'s Store"}
+            )
+
+        # ✅ Safely get store for this vendor
         store = get_object_or_404(
             Store,
-            id=self.kwargs['store_id'],
-            vendor=self.request.user.vendor_profile
+            id=self.kwargs.get('store_id'),
+            vendor=vendor_profile
         )
 
+        # ✅ Save product linked to this store
         product = serializer.save(store=store)
 
-        # Build tweet text
+        # ✅ Build tweet text
         tweet_text = (
             f"🆕 New product added to {store.name}!\n\n"
             f"{product.name}\n\n"
             f"{product.description}"
         )
 
-        # Optional image
+        # ✅ Optional image URL (still supported by twitter_service)
         image_url = product.image.url if product.image else None
 
-        # Post tweet
+        # ✅ Post tweet safely (mentor requirement)
         post_tweet(text=tweet_text, image_url=image_url)
-
 
 # -----------------------------
 # VENDOR: VIEW REVIEWS
@@ -93,14 +104,14 @@ class VendorReviewListView(generics.ListAPIView):
 # VENDOR: VIEW OWN STORES
 # -----------------------------
 class VendorStoreListView(generics.ListAPIView):
-    """Vendor retrieves their stores."""
+    """Vendor retrieves their own stores."""
     serializer_class = StoreSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """ Get stores owned by the vendor. """
+        """ Get stores owned by the authenticated vendor. """
         return Store.objects.filter(
-            vendor=self.request.user.vendor_profile
+            vendor__user=self.request.user
         )
 
 

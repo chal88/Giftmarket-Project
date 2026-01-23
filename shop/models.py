@@ -51,7 +51,7 @@ class Store(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.name} ({self.vendor.store_name})"
+        return str(self.name)
 
 
 # 3. Store Products
