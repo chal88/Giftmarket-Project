@@ -312,3 +312,8 @@ that explains how the main API endpoints interact.
 
 - File: `sequence_api_diagram.md`
 - Covers cart, checkout, and vendor product management flows
+
+##### Note to mentor/lecturer
+After amny attempts and mentor calls, I have tried correcting and finding solutions to fix the error with Mysql and I keep 
+running into errors that link to what seems to be a broken file, trying multiple times to fix even after uninstalling Mysql
+and re-installing. I cannot therefore test my task after making corrections.

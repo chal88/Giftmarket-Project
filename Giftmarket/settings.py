@@ -93,7 +93,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'giftmarket_db',
         'USER': 'giftmarket_user',
-        'PASSWORD': 'root',
+        'PASSWORD': 'chalice',
         'HOST': 'localhost',
         'PORT': '3306',
     }
