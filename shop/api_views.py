@@ -12,7 +12,11 @@ from .permissions import IsVendor
 from .twitter_service import post_tweet
 from .models import VendorProfile
 from rest_framework import generics, permissions
-from .models import Store, Product, Review
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .models import Review as ReviewType
 
 # -----------------------------
 # VENDOR: CREATE STORE
@@ -53,47 +57,44 @@ class ProductCreateView(generics.CreateAPIView):
     def perform_create(self, serializer):
         """Save the product safely and post a tweet."""
 
-        # ✅ Safely get or create VendorProfile
-        vendor_profile, _ = getattr(self.request.user, 'vendor_profile', None), None
-        if vendor_profile is None:
-            from .models import VendorProfile
-            vendor_profile, _ = VendorProfile.objects.get_or_create(
-                user=self.request.user,
-                defaults={'store_name': f"{self.request.user.username}'s Store"}
-            )
+        # ✅ Always safely get the vendor (prevents duplicates)
+        vendor_profile, _ = VendorProfile.objects.get_or_create(
+            user=self.request.user,
+            defaults={'store_name': f"{self.request.user.username}'s Store"}
+        )
 
-        # ✅ Safely get store for this vendor
+        # ✅ Ensure vendor owns the store
         store = get_object_or_404(
             Store,
             id=self.kwargs.get('store_id'),
             vendor=vendor_profile
         )
 
-        # ✅ Save product linked to this store
+        # ✅ Save product
         product = serializer.save(store=store)
 
-        # ✅ Build tweet text
+        # ✅ Tweet (safe if credentials missing)
         tweet_text = (
             f"🆕 New product added to {store.name}!\n\n"
             f"{product.name}\n\n"
             f"{product.description}"
         )
 
-        # ✅ Optional image URL (still supported by twitter_service)
         image_url = product.image.url if product.image else None
-
-        # ✅ Post tweet safely (mentor requirement)
         post_tweet(text=tweet_text, image_url=image_url)
+
 
 # -----------------------------
 # VENDOR: VIEW REVIEWS
 # -----------------------------
+
+
 class VendorReviewListView(generics.ListAPIView):
     """Vendor retrieves reviews for their products."""
     serializer_class = ReviewSerializer
     permission_classes = [permissions.IsAuthenticated, IsVendor]
-
-    def get_queryset(self):
+       
+    def get_queryset(self) -> 'ReviewType.objects.__class__':
         """ Get reviews for products owned by the vendor. """
         return Review.objects.filter(
             product__store__vendor=self.request.user.vendor_profile
@@ -112,7 +113,7 @@ class VendorStoreListView(generics.ListAPIView):
         """ Get stores owned by the authenticated vendor. """
         return Store.objects.filter(
             vendor__user=self.request.user
-        )
+            )  # type: ignore[attr-defined]
 
 
 # -----------------------------
