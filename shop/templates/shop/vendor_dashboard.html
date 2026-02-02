@@ -5,59 +5,84 @@
 <div class="container mt-4">
     <h2 class="mb-4">Vendor Dashboard</h2>
 
-    {% if stores %}
-        <!-- Add Product Button -->
-        <div class="mb-3">
-            <a href="{% url 'add_product' %}" class="btn btn-success">
-                Add New Product
+    <!-- STORE SECTION -->
+    <div class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4>Your Stores</h4>
+            <a href="{% url 'vendor_store_list' %}" class="btn btn-outline-primary">
+                Manage Stores
             </a>
         </div>
 
-        <!-- Products List -->
-        <div class="row">
-            {% for product in products %}
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        {% if product.image %}
-                            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
-                        {% else %}
-                            <img src="{% static 'images/default.png' %}" class="card-img-top" alt="No image">
-                        {% endif %}
+        {% if stores %}
+            <ul class="list-group">
+                {% for store in stores %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ store.name }}
+                        <span class="text-muted">ID: {{ store.id }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="alert alert-warning">
+                You do not have any stores yet.
+                <a href="{% url 'create_store' %}" class="alert-link">
+                    Create your first store
+                </a>
+            </div>
+        {% endif %}
+    </div>
 
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title">{{ product.name }}</h5>
-                            <p class="card-text">{{ product.description|truncatewords:15 }}</p>
-                            <p class="fw-bold">R {{ product.price }}</p>
+    <!-- PRODUCT SECTION -->
+    <div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4>Your Products</h4>
+            {% if stores %}
+                <a href="{% url 'add_product' %}" class="btn btn-success">
+                    Add New Product
+                </a>
+            {% endif %}
+        </div>
 
-                            <div class="mt-auto">
-                                <a href="{% url 'edit_product' product.id %}" class="btn btn-primary btn-sm">
-                                    Edit
-                                </a>
-                                <a href="{% url 'delete_product' product.id %}" class="btn btn-danger btn-sm">
-                                    Delete
-                                </a>
+        {% if products %}
+            <div class="row">
+                {% for product in products %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                            {% else %}
+                                <img src="{% static 'images/default.png' %}" class="card-img-top" alt="No image">
+                            {% endif %}
+
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">{{ product.name }}</h5>
+                                <p class="card-text">
+                                    {{ product.description|truncatewords:15 }}
+                                </p>
+                                <p class="fw-bold mb-1">R {{ product.price }}</p>
+                                <small class="text-muted mb-3">
+                                    Store: {{ product.store.name }}
+                                </small>
+
+                                <div class="mt-auto">
+                                    <a href="{% url 'edit_product' product.id %}"
+                                       class="btn btn-primary btn-sm">
+                                        Edit
+                                    </a>
+                                    <a href="{% url 'delete_product' product.id %}"
+                                       class="btn btn-danger btn-sm">
+                                        Delete
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            {% empty %}
-                <p>No products added yet.</p>
-            {% endfor %}
-        </div>
-
-    {% else %}
-        <!-- Create Store -->
-        <h4>You don't have a store yet</h4>
-        <form method="post" class="mt-3">
-            {% csrf_token %}
-            <div class="mb-3">
-                <input type="text" name="store_name" class="form-control"
-                       placeholder="Enter store name" required>
+                {% endfor %}
             </div>
-            <button type="submit" class="btn btn-primary">
-                Create Store
-            </button>
-        </form>
-    {% endif %}
+        {% else %}
+            <p class="text-muted">No products added yet.</p>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

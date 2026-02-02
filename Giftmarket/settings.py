@@ -85,21 +85,28 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Giftmarket.wsgi.application'
 
-
+'''
 # DATABASE (MySQL)
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'giftmarket_db',
-        'USER': 'giftmarket_user',
+        'USER': 'root',
         'PASSWORD': 'chalice',
         'HOST': 'localhost',
         'PORT': '3306',
     }
 }
+'''
 
-
+# Database SQlite
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
 # PASSWORD VALIDATORS
 
 AUTH_PASSWORD_VALIDATORS = [

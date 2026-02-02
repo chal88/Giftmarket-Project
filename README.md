@@ -1,73 +1,106 @@
 # Giftmarket – Django eCommerce Application
+Description:
 
-## Description
 Giftmarket is a Django-based eCommerce application that supports both buyers and vendors.
-Vendors can create stores and manage products, while buyers can browse products, place
-orders, and leave reviews. The project also exposes a RESTful Web API built with
-Django REST Framework.
-
----
+Vendors can create stores and manage products, while buyers can browse products, place orders, and leave reviews. The project also exposes a RESTful Web API built with Django REST Framework.
 
 ## Planning & System Design
+This project includes formal planning documentation and system design artifacts as required by the task specification.
 
-This project includes formal planning documentation and system design
-artifacts as required by the task specification.
+### Vendor Store Management
+Vendors are provided with full CRUD (Create, Read, Update, Delete) functionality for managing their stores.
+After registering as a vendor, a user can:
+    * Create multiple stores
+    * View a list of all their stores
+    * Update store information (e.g., store name)
+    * Delete stores that are no longer required
 
-### Planning Documents
-All planning files are located in the `Planning/` directory and include:
-- Project overview
-- Requirements analysis
-- UI layout planning
-- Security considerations
-- Failure and risk planning
+Access control ensures vendors can only manage stores belonging to their own VendorProfile.
+This implementation satisfies the requirements of Part 1 while also supporting Part 2 functionality such as product creation and signal-based tweet notifications when a new store is added.
 
-### API Sequence Diagrams
-API request–response flows are documented using sequence diagrams.
+#### Product Management
+* Vendors can add, edit, and delete products for their stores.
+* Product creation always triggers a tweet (if credentials exist) using Django signals, ensuring consistency across:
+    * REST API requests
+    * Django Admin
+    * Web UI
+    * Django shell
 
-The diagrams are located in the following directory:
+##### Features
+
+##### Marketplace
+  * Buyer and Vendor registration
+  * Vendor profiles and stores
+  * Product listings and product detail pages
+  * Shopping cart and checkout
+  * Order history
+  * Product reviews (verified purchases only)
+  * Vendor dashboard for managing products and stores
+
+###### Web API
+
+  * RESTful API using Django REST Framework
+  * Public read-only endpoints
+  * Vendor-protected endpoints
+  * JSON responses via DRF serializers
+  * Browsable API interface
+
+##### Signals & Twitter (X) Integration
+
+* Tweets are triggered at model level, not only in the API.
+* A post_save signal listens for new Product creations and calls post_tweet().
+* If API credentials are missing or invalid:
+  * Application logs a warning
+  * Product creation still succeeds without crashing
+
+##### Technologies Used
+Python 3.13
+Django 6.0
+Django REST Framework
+MySQL / MariaDB (optional)
+Bootstrap 5
 
 
-These diagrams visually describe:
-- Buyer actions (browse products, add to cart, checkout)
-- Vendor actions (create store, add/edit/delete products)
-- API request and response flow
-- Database interactions
+#### Known Limitations
+Twitter/X API posting is disabled if API credentials are not configured.
+Image uploads require correct MEDIA settings.
+MySQL configuration may fail depending on local setup. SQLite is used as the default database.
 
-Each diagram uses arrows to clearly show the order of interactions
-between the Client, Django Views, API endpoints, and Database.
+Manual Testing Checklist 
 
-## Features
+Buyer flows:
+ Buyer signup
+ Browse all products
+ Add product to cart
+ Increase/decrease quantity
+ Checkout successfully
+ Verify order history displays correct orders
+ Submit product review (verified purchase only)
 
-### Marketplace
-- Buyer and Vendor registration
-- Vendor profiles and stores
-- Product listings and product detail pages
-- Shopping cart and checkout
-- Order history
-- Product reviews (verified purchases)
-- Vendor dashboard for managing products
+Vendor flows:
+ Vendor signup
+ Create one or multiple stores
+ Update store information
+ Delete a store
+ Add product to a store
+ Edit product details
+ Delete a product
+ Confirm tweet is attempted (check logs)
 
-### Web API
-- RESTful API using Django REST Framework
-- Public read-only endpoints
-- Vendor-protected endpoints
-- JSON responses via DRF serializers
-- Browsable API interface
+API flows:
+ Create product via API
+ Ensure post_save signal triggers tweet
+ Confirm API responds with 201 Created
+ Read-only endpoints return correct JSON
 
----
+Notes:
+All functionality must be tested with at least one buyer and one vendor account
+Signals ensure tweets occur for both web and API product creation
+Store CRUD must enforce vendor ownership
 
-## Technologies Used
-- Python 3.13
-- Django 6.0
-- Django REST Framework
-- MySQL / MariaDB
-- Bootstrap 5
-
----
-
-## Known Limitations
-- Twitter (X) API posting is disabled if API credentials are not configured.
-- Image uploads require correct MEDIA settings.
+**Note to Mentor / Lecturer**
+After many attempts and mentor calls, I was unable to fully test the MySQL database due to persistent errors, even after reinstalling.
+For demonstration purposes, the application runs on SQLite, and all features (vendor store CRUD, product management, signals, and tweet logic) are fully implemented and functional.
 
 ## Project Structure (High-Level)
 
@@ -312,8 +345,3 @@ that explains how the main API endpoints interact.
 
 - File: `sequence_api_diagram.md`
 - Covers cart, checkout, and vendor product management flows
-
-##### Note to mentor/lecturer
-After amny attempts and mentor calls, I have tried correcting and finding solutions to fix the error with Mysql and I keep 
-running into errors that link to what seems to be a broken file, trying multiple times to fix even after uninstalling Mysql
-and re-installing. I cannot therefore test my task after making corrections.

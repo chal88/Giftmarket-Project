@@ -9,7 +9,6 @@ from .serializers import (
     ReviewSerializer
 )
 from .permissions import IsVendor
-from .twitter_service import post_tweet
 from .models import VendorProfile
 from rest_framework import generics, permissions
 

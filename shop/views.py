@@ -8,8 +8,6 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.db.models import Avg
-from .twitter_service import post_tweet
-
 from .models import Product, Order, OrderItem, Review, Store, VendorProfile, User
 from .forms import (
     BuyerSignupForm,
@@ -17,8 +15,83 @@ from .forms import (
     OrderItemForm,
     ProductForm,
     ProductUpdateForm)
-from shop.models import VendorProfile, Store, Product
 
+
+@login_required
+def vendor_store_list(request):
+    """List all stores owned by the vendor."""
+    if not hasattr(request.user, "vendor_profile"):
+        messages.error(request, "Vendor profile not found.")
+        return redirect("vendor_signup")
+
+    stores = Store.objects.filter(vendor=request.user.vendor_profile)
+    return render(request, "shop/vendor_store_list.html", {"stores": stores})
+
+
+@login_required
+def create_store(request):
+    """Create a new store for the vendor."""
+    if not hasattr(request.user, "vendor_profile"):
+        messages.error(request, "Vendor profile not found.")
+        return redirect("vendor_signup")
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+
+        if not name:
+            messages.error(request, "Store name is required.")
+            return redirect("create_store")
+
+        Store.objects.create(
+            vendor=request.user.vendor_profile,
+            name=name
+        )
+
+        messages.success(request, "Store created successfully.")
+        return redirect("vendor_store_list")
+
+    return render(request, "shop/create_store.html")
+
+
+@login_required
+def update_store(request, store_id):
+    """Update an existing store."""
+    store = get_object_or_404(
+        Store,
+        id=store_id,
+        vendor=request.user.vendor_profile
+    )
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+
+        if not name:
+            messages.error(request, "Store name cannot be empty.")
+            return redirect("update_store", store_id=store.id)
+
+        store.name = name
+        store.save()
+        messages.success(request, "Store updated successfully.")
+        return redirect("vendor_store_list")
+
+    return render(request, "shop/update_store.html", {"store": store})
+
+
+@login_required
+def delete_store(request, store_id):
+    """Delete a store."""
+    store = get_object_or_404(
+        Store,
+        id=store_id,
+        vendor=request.user.vendor_profile
+    )
+
+    if request.method == "POST":
+        store.delete()
+        messages.success(request, "Store deleted successfully.")
+        return redirect("vendor_store_list")
+
+    return render(request, "shop/delete_store.html", {"store": store})
 
 # -----------------------------
 # PRODUCT LIST / DETAIL
@@ -151,7 +224,8 @@ def checkout(request):
 @login_required
 def order_history(request):
     """Display past orders for the user."""
-    orders = Order.objects.filter(buyer=request.user).exclude(status='pending').order_by('-created_at')
+    orders = Order.objects.filter(
+        buyer=request.user).exclude(status='pending').order_by('-created_at')
     return render(request, 'shop/order_history.html', {'orders': orders})
 
 
@@ -173,7 +247,8 @@ def submit_review(request, product_id):
             return redirect('product_detail', product_id=product.id)
 
         if Review.objects.filter(product=product, user=request.user).exists():
-            messages.warning(request, "You have already reviewed this product.")
+            messages.warning(
+                request, "You have already reviewed this product.")
             return redirect('product_detail', product_id=product.id)
 
         purchased = OrderItem.objects.filter(
@@ -218,21 +293,17 @@ def buyer_signup(request):
 def vendor_signup(request):
     """Handle vendor signup."""
     if request.user.is_authenticated:
-        messages.warning(request,
-                         "Please log out before creating a new account.")
+        messages.warning(
+            request,
+            "Please log out before creating a new account."
+        )
         return redirect('product_list')
 
     form = VendorSignupForm(request.POST or None)
     if form.is_valid():
         user = form.save(commit=False)
         user.role = 'vendor'
-        user.save()
-
-        # Create VendorProfile
-        VendorProfile.objects.create(
-            user=user,
-            store_name=form.cleaned_data['store_name']
-        )
+        user.save()  # Signal creates VendorProfile here
 
         login(request, user)
         return redirect('vendor_dashboard')
@@ -247,29 +318,13 @@ def vendor_signup(request):
 
 @login_required
 def vendor_dashboard(request):
-    """Vendor dashboard showing stores and products."""
+    """Vendor dashboard overview."""
 
     if not hasattr(request.user, "vendor_profile"):
         messages.error(request, "Vendor profile not found.")
         return redirect("vendor_signup")
 
     vendor_profile = request.user.vendor_profile
-
-    if request.method == "POST":
-        store_name = request.POST.get("store_name")
-
-        if not store_name:
-            messages.error(request, "Store name is required.")
-            return redirect("vendor_dashboard")
-
-        Store.objects.create(
-            vendor=vendor_profile,
-            name=store_name
-        )
-
-        messages.success(request, "Store created successfully.")
-        return redirect("vendor_dashboard")
-
     stores = Store.objects.filter(vendor=vendor_profile)
     products = Product.objects.filter(store__in=stores)
 
@@ -284,32 +339,42 @@ def vendor_dashboard(request):
 def add_product(request):
     """Add a new product for the vendor."""
 
+    # Ensure user is a vendor
     if not hasattr(request.user, 'vendor_profile'):
         messages.error(request, "You must complete vendor signup first.")
         return redirect('vendor_signup')
 
     vendor_profile = request.user.vendor_profile
-    store = vendor_profile.stores.first()
 
-    if not store:
+    # Get all stores for this vendor
+    stores = vendor_profile.stores.all()
+    if not stores.exists():
         messages.error(request, "Create a store first.")
         return redirect('vendor_dashboard')
 
+    # If vendor has multiple stores, let them select one
+    # If only one store, use it automatically
+    selected_store = stores.first()
+
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES)
+        store_id = request.POST.get('store_id')  # optional if multiple stores
+        if store_id:
+            selected_store = get_object_or_404(Store, id=store_id, vendor=vendor_profile)
+
         if form.is_valid():
             product = form.save(commit=False)
-            product.store = store
-            product.save()
-            messages.success(request, "Product added successfully.")
+            product.store = selected_store
+            product.save()  # ✅ safe: store is guaranteed
+            messages.success(request, f"Product '{product.name}' added to {selected_store.name}.")
             return redirect('vendor_dashboard')
     else:
         form = ProductForm()
 
-    # ✅ ALWAYS return a response
     return render(request, 'shop/add_product.html', {
         'form': form,
-        'store': store
+        'stores': stores,  # send list to template for selection
+        'selected_store': selected_store
     })
 
 
