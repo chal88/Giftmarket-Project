@@ -303,6 +303,7 @@ def vendor_signup(request):
     if form.is_valid():
         user = form.save(commit=False)
         user.role = 'vendor'
+        user.set_password(form.cleaned_data['password1'])
         user.save()  # Signal creates VendorProfile here
 
         login(request, user)

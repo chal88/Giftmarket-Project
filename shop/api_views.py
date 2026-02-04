@@ -79,10 +79,6 @@ class ProductCreateView(generics.CreateAPIView):
             f"{product.description}"
         )
 
-        image_url = product.image.url if product.image else None
-        post_tweet(text=tweet_text, image_url=image_url)
-
-
 # -----------------------------
 # VENDOR: VIEW REVIEWS
 # -----------------------------
